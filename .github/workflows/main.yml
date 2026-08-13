@@ -14,39 +14,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create Gradle project files
+      - name: Check project files
         run: |
-          cat > settings.gradle.kts <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          rootProject.name = "TEST-MITRA"
-          include(":app")
-          EOF
-
-          cat > build.gradle.kts <<'EOF'
-          plugins {
-              alias(libs.plugins.android.application) apply false
-              alias(libs.plugins.kotlin.compose) apply false
-              alias(libs.plugins.google.devtools.ksp) apply false
-              alias(libs.plugins.roborazzi) apply false
-              alias(libs.plugins.secrets) apply false
-              alias(libs.plugins.google.services) apply false
-          }
-          EOF
+          echo "Project files:"
+          ls -la
+          echo "Gradle files:"
+          find . -maxdepth 3 -type f \( -name "build.gradle*" -o -name "settings.gradle*" -o -name "libs.versions.toml" \)
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -65,7 +38,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.13"
+          gradle-version: "9.1"
 
       - name: Build APK
         run: gradle assembleDebug --stacktrace
