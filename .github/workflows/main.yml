@@ -60,7 +60,11 @@ jobs:
         run: |
           set -e
 
-          echo "android.disallowKotlinSourceSets=false" >> gradle.properties
+          touch gradle.properties
+
+          if ! grep -q "android.disallowKotlinSourceSets=false" gradle.properties; then
+            echo "android.disallowKotlinSourceSets=false" >> gradle.properties
+          fi
 
           echo "Gradle properties:"
           cat gradle.properties
@@ -71,12 +75,16 @@ jobs:
         run: |
           set -e
 
-          if grep -q 'googleDevtoolsKsp = "2.3.5"' gradle/libs.versions.toml; then
-            sed -i 's/googleDevtoolsKsp = "2.3.5"/googleDevtoolsKsp = "2.2.10-2.0.2"/' gradle/libs.versions.toml
+          if [ -f "gradle/libs.versions.toml" ]; then
+
+            if grep -q 'googleDevtoolsKsp = "2.3.5"' gradle/libs.versions.toml; then
+              sed -i 's/googleDevtoolsKsp = "2.3.5"/googleDevtoolsKsp = "2.2.10-2.0.2"/' gradle/libs.versions.toml
+            fi
+
           fi
 
           echo "KSP version:"
-          grep "googleDevtoolsKsp" gradle/libs.versions.toml
+          grep "googleDevtoolsKsp" gradle/libs.versions.toml || true
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -95,6 +103,35 @@ jobs:
             "platforms;android-36" \
             "platforms;android-36.1" \
             "build-tools;36.0.0"
+
+      - name: Generate Debug Keystore
+        working-directory: ${{ env.PROJECT_ROOT }}
+        shell: bash
+        run: |
+          set -e
+
+          KEYSTORE="$PROJECT_ROOT/debug.keystore"
+
+          if [ ! -f "$KEYSTORE" ]; then
+            echo "Creating debug.keystore..."
+
+            keytool -genkeypair \
+              -v \
+              -keystore "$KEYSTORE" \
+              -storepass android \
+              -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+
+            echo "Debug keystore created successfully."
+          else
+            echo "Debug keystore already exists."
+          fi
+
+          ls -lh "$KEYSTORE"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
