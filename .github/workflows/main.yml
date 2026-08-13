@@ -54,18 +54,28 @@ jobs:
           echo "Project root:"
           echo "$PROJECT_ROOT"
 
+      - name: Fix Gradle Configuration
+        working-directory: ${{ env.PROJECT_ROOT }}
+        shell: bash
+        run: |
+          set -e
+
+          echo "android.disallowKotlinSourceSets=false" >> gradle.properties
+
+          echo "Gradle properties:"
+          cat gradle.properties
+
       - name: Fix KSP Version
         working-directory: ${{ env.PROJECT_ROOT }}
         shell: bash
         run: |
           set -e
 
-          echo "Before:"
-          grep "googleDevtoolsKsp" gradle/libs.versions.toml
+          if grep -q 'googleDevtoolsKsp = "2.3.5"' gradle/libs.versions.toml; then
+            sed -i 's/googleDevtoolsKsp = "2.3.5"/googleDevtoolsKsp = "2.2.10-2.0.2"/' gradle/libs.versions.toml
+          fi
 
-          sed -i 's/googleDevtoolsKsp = "2.3.5"/googleDevtoolsKsp = "2.2.10-2.0.2"/' gradle/libs.versions.toml
-
-          echo "After:"
+          echo "KSP version:"
           grep "googleDevtoolsKsp" gradle/libs.versions.toml
 
       - name: Set up JDK 17
